@@ -20,6 +20,7 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -29,11 +30,15 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -51,6 +56,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleApiClient googleApiClient;
     private Button locationButton;
     private LocationCallback locationCallback;
+    private PlaceAutocompleteFragment autocompleteFragment;
+    private LatLngBounds bounds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +66,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+        autocompleteFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+        autocompleteFragment.setBoundsBias(bounds);
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                // TODO: Get info about the selected place.
+                addDestinationMarker(place.getLatLng());
+            }
 
+            @Override
+            public void onError(Status status) {
+                // TODO: Handle the error.
+
+            }
+        });
         mapFragment.getMapAsync(this);
         locationCallback = new LocationCallback(){
             @Override
@@ -97,19 +119,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onSuccess(Location location) {
                 if (location != null) {
                     LatLng currentLatLng = new LatLng(location.getLatitude(),location.getLongitude());
-                    mMap.moveCamera(newLatLng(currentLatLng));
-                    mMap.setMinZoomPreference(15);
                 } else {
 
                 }
             }
         });
     }
-
+    public void addDestinationMarker(LatLng latLng){
+        mMap.clear();
+        mMap.addMarker(new MarkerOptions().position(latLng));
+        //BmMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        mMap.setMinZoomPreference(10);
+        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+    }
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
+        LatLng trafalgar= new LatLng(51.508056,-0.128056);
+        mMap.moveCamera(newLatLng(trafalgar));
+        mMap.setMinZoomPreference(10);
+        bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
     }
 
 
@@ -121,12 +151,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
-        Context context = getApplicationContext();
-        CharSequence text = "Location Changed";
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
-        movePoint();
+        autocompleteFragment.setBoundsBias(new LatLngBounds(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()),new LatLng(51.508056,-0.128056)));
     }
 
     @Override
@@ -173,17 +198,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         requestLocationUpdates();
-        Context context = getApplicationContext();
-        CharSequence text = "Connected!";
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
         movePoint();
 
     }
 
     private void requestLocationUpdates() {
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
@@ -195,12 +214,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             // for ActivityCompat#requestPermissions for more details.
         }
         locationProvider.requestLocationUpdates(locationRequest,locationCallback,null );
-        Context context = getApplicationContext();
-        CharSequence text = "Updates Requested!";
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
-
     }
 
     @Override
