@@ -39,10 +39,23 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.GoogleMapOptions;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import static com.google.android.gms.maps.CameraUpdateFactory.*;
 
@@ -58,6 +71,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationCallback locationCallback;
     private PlaceAutocompleteFragment autocompleteFragment;
     private LatLngBounds bounds;
+    private MarkerOptions destination;
+    private ArrayList<MarkerOptions> bikePoints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +87,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
-                // TODO: Get info about the selected place.
                 addDestinationMarker(place.getLatLng());
             }
 
@@ -127,11 +141,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
     public void addDestinationMarker(LatLng latLng){
         mMap.clear();
-        mMap.addMarker(new MarkerOptions().position(latLng));
+        destination = new MarkerOptions().position(latLng);
+        GoogleMap.OnMarkerClickListener onClickListener = new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                return false;
+            }
+        };
+        mMap.addMarker(destination);
         //BmMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.setMinZoomPreference(10);
         mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
     }
+
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -140,6 +163,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(newLatLng(trafalgar));
         mMap.setMinZoomPreference(10);
         bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+        try {
+            ArrayList<LatLng> results = new NetworkAsyncInitialize().execute(mMap).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
 
