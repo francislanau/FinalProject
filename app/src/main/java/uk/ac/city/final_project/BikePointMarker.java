@@ -28,4 +28,6 @@ public class BikePointMarker implements ClusterItem  {
     public String getSnippet() {
         return null;
     }
+
+
 }

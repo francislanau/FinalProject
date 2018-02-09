@@ -44,6 +44,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.GoogleMapOptions;
+import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 
 import org.json.JSONArray;
@@ -163,7 +164,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(newLatLng(trafalgar));
         mMap.setMinZoomPreference(10);
         bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
-        bikePoints = new ClusterManager<BikePointMarker>(this, mMap);
+        bikePoints = new ClusterManager<BikePointMarker>(this, mMap){
+            @Override
+            public boolean onMarkerClick(Marker marker){
+                new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition());
+                return true;
+
+            }
+        };
         mMap.setOnCameraIdleListener(bikePoints);
         mMap.setOnMarkerClickListener(bikePoints);
         try {
@@ -177,11 +185,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+
     private void startLocationUpdates() {
         requestLocationUpdates();
     }
 
-
+    private LatLng getCurrentLocation(){
+        final LatLng[] currentLatLng = new LatLng[1];
+        locationProvider.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    currentLatLng[0] = new LatLng(location.getLatitude(), location.getLongitude());
+                }
+                else{
+                    currentLatLng[0] = new LatLng(51.508056,-0.128056);
+                }
+            }
+        });
+        return currentLatLng[0];
+    }
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
