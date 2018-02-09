@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.clustering.ClusterManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -20,11 +21,11 @@ import javax.net.ssl.HttpsURLConnection;
  * Created by franc on 08/02/2018.
  */
 
-public class NetworkAsyncInitialize extends AsyncTask<GoogleMap, Void, ArrayList<LatLng>>{
-    private GoogleMap googleMap;
+public class NetworkAsyncInitialize extends AsyncTask<ClusterManager<BikePointMarker>, Void, ArrayList<LatLng>>{
+    private ClusterManager<BikePointMarker> bikePointMarkerClusterManager;
     @Override
-    protected ArrayList<LatLng> doInBackground(GoogleMap... googleMaps) {
-        googleMap = googleMaps[0];
+    protected ArrayList<LatLng> doInBackground(ClusterManager<BikePointMarker>... bikePointMarkers) {
+        bikePointMarkerClusterManager = bikePointMarkers[0];
         return getValuesFromJSON(bikePointSearch());
     }
 
@@ -60,9 +61,10 @@ public class NetworkAsyncInitialize extends AsyncTask<GoogleMap, Void, ArrayList
     }
 
     @Override
-    protected void onPostExecute(ArrayList<LatLng> latLngs) {
+    protected void onPostExecute(ArrayList<LatLng> latLngs){
         for(int i = 0; i<latLngs.size(); i++){
-            googleMap.addMarker(new MarkerOptions().position(latLngs.get(i)));
+            //googleMap.addMarker(new MarkerOptions().position(latLngs.get(i)));
+            bikePointMarkerClusterManager.addItem(new BikePointMarker(latLngs.get(i)));
         }
     }
 }

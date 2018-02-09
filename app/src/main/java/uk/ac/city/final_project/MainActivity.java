@@ -44,6 +44,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.GoogleMapOptions;
+import com.google.maps.android.clustering.ClusterManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -72,8 +73,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private PlaceAutocompleteFragment autocompleteFragment;
     private LatLngBounds bounds;
     private MarkerOptions destination;
-    private ArrayList<MarkerOptions> bikePoints;
-
+    private ClusterManager<BikePointMarker> bikePoints;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -163,13 +163,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(newLatLng(trafalgar));
         mMap.setMinZoomPreference(10);
         bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+        bikePoints = new ClusterManager<BikePointMarker>(this, mMap);
+        mMap.setOnCameraIdleListener(bikePoints);
+        mMap.setOnMarkerClickListener(bikePoints);
         try {
-            ArrayList<LatLng> results = new NetworkAsyncInitialize().execute(mMap).get();
+            ArrayList<LatLng> results = new NetworkAsyncInitialize().execute(bikePoints).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
+
     }
 
 
