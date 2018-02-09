@@ -30,6 +30,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
@@ -53,8 +54,12 @@ import org.json.JSONObject;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Scanner;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -84,7 +89,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         autocompleteFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
-        autocompleteFragment.setBoundsBias(bounds);
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
@@ -150,7 +154,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         };
         mMap.addMarker(destination);
-        //BmMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+
         mMap.setMinZoomPreference(10);
         mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
     }
@@ -164,11 +168,24 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(newLatLng(trafalgar));
         mMap.setMinZoomPreference(10);
         bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder().setCountry("UK").build();
+        autocompleteFragment.setFilter(typeFilter);
+        //autocompleteFragment.setBoundsBias(new LatLngBounds(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()),trafalgar));
         bikePoints = new ClusterManager<BikePointMarker>(this, mMap){
             @Override
             public boolean onMarkerClick(Marker marker){
-                new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition());
-                return true;
+                try {
+                    GregorianCalendar gc = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+                    gc.add(Calendar.SECOND,
+                            (new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition()).get()));
+
+                    marker.setSnippet("ETA " + gc.getTime().getTime());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                return false;
 
             }
         };
@@ -208,7 +225,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = location;
-        autocompleteFragment.setBoundsBias(new LatLngBounds(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()),new LatLng(51.508056,-0.128056)));
+        autocompleteFragment.setBoundsBias(new LatLngBounds(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()),new LatLng(51.508056,-0.128056)));
     }
 
     @Override

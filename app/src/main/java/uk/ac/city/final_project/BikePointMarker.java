@@ -10,8 +10,12 @@ import com.google.maps.android.clustering.ClusterManager;
 
 public class BikePointMarker implements ClusterItem  {
     private final LatLng mPosition;
-    public BikePointMarker(LatLng latLng){
+    private final String title;
+    private String snippet;
+    public BikePointMarker(LatLng latLng, String name){
         mPosition = latLng;
+        this.title = name;
+        snippet = snippet;
     }
 
     @Override
@@ -21,13 +25,15 @@ public class BikePointMarker implements ClusterItem  {
 
     @Override
     public String getTitle() {
-        return null;
+        return title;
     }
 
     @Override
     public String getSnippet() {
-        return null;
+        return snippet;
     }
 
-
+    public void setSnippet(String snippet) {
+        this.snippet = snippet;
+    }
 }

@@ -23,6 +23,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class NetworkAsyncInitialize extends AsyncTask<ClusterManager<BikePointMarker>, Void, ArrayList<LatLng>>{
     private ClusterManager<BikePointMarker> bikePointMarkerClusterManager;
+    private ArrayList<String> markerName = new ArrayList<>();
     @Override
     protected ArrayList<LatLng> doInBackground(ClusterManager<BikePointMarker>... bikePointMarkers) {
         bikePointMarkerClusterManager = bikePointMarkers[0];
@@ -52,6 +53,7 @@ public class NetworkAsyncInitialize extends AsyncTask<ClusterManager<BikePointMa
             for (int i = 0; i<jsonArray.length(); i++){
                 JSONObject result = jsonArray.getJSONObject(i);
                 latLongList.add(new LatLng(result.getDouble("lat"), result.getDouble("lon")));
+                markerName.add(result.getString("commonName"));
             }
         }
         catch (Exception e){
@@ -63,8 +65,7 @@ public class NetworkAsyncInitialize extends AsyncTask<ClusterManager<BikePointMa
     @Override
     protected void onPostExecute(ArrayList<LatLng> latLngs){
         for(int i = 0; i<latLngs.size(); i++){
-            //googleMap.addMarker(new MarkerOptions().position(latLngs.get(i)));
-            bikePointMarkerClusterManager.addItem(new BikePointMarker(latLngs.get(i)));
+            bikePointMarkerClusterManager.addItem(new BikePointMarker(latLngs.get(i),markerName.get(i)));
         }
     }
 }

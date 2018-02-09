@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
@@ -18,15 +19,20 @@ import javax.net.ssl.HttpsURLConnection;
  * Created by franc on 09/02/2018.
  */
 
-public class DistanceMatrixAsync extends AsyncTask<LatLng,Void,Void> {
+public class DistanceMatrixAsync extends AsyncTask<LatLng,Void,Integer> {
     private LatLng origin;
     private LatLng destination;
     @Override
-    protected Void doInBackground(LatLng... latLngs) {
+    protected Integer doInBackground(LatLng... latLngs) {
         origin= latLngs[0];
         destination = latLngs[1];
-        getDistance();
-        return null;
+        Integer retInt = 0;
+        try {
+            retInt = getValuesFromJSON(getDistance());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return retInt;
     }
 
     private String getDistance()  {
@@ -47,19 +53,19 @@ public class DistanceMatrixAsync extends AsyncTask<LatLng,Void,Void> {
         return jsonResult;
     }
 
-    private ArrayList<LatLng> getValuesFromJSON(String jsonResult){
-        ArrayList<LatLng> latLongList = new ArrayList<>();
+    private Integer getValuesFromJSON(String jsonResult) throws JSONException {
+        Integer integer= null;
         try{
-            JSONObject jsonObject = new JSONObject("{\"results\" :"+ jsonResult+"}");
-            JSONArray jsonArray = jsonObject.getJSONArray("results");
-            for (int i = 0; i<jsonArray.length(); i++){
-                JSONObject result = jsonArray.getJSONObject(i);
-                latLongList.add(new LatLng(result.getDouble("lat"), result.getDouble("lon")));
-            }
-        }
+            JSONObject jsonObject = new JSONObject(jsonResult);
+            JSONArray jsonArray = jsonObject.getJSONArray("rows");
+            jsonObject = jsonArray.getJSONObject(0);
+            jsonArray = jsonObject.getJSONArray("elements");
+            jsonObject = jsonArray.getJSONObject(0);
+            JSONObject result = jsonObject.getJSONObject("duration");
+            integer = result.getInt("value");        }
         catch (Exception e){
             e.printStackTrace();
         }
-        return latLongList;
+        return integer;
     }
 }
