@@ -5,31 +5,22 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
-import android.location.LocationManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.FusedLocationProviderApi;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
@@ -43,28 +34,15 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.maps.GoogleMapOptions;
-import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import static com.google.android.gms.maps.CameraUpdateFactory.*;
+import static com.google.android.gms.maps.CameraUpdateFactory.newLatLng;
 
 @SuppressWarnings("ALL")
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener , GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -89,6 +67,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         autocompleteFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
@@ -170,7 +149,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
         AutocompleteFilter typeFilter = new AutocompleteFilter.Builder().setCountry("UK").build();
         autocompleteFragment.setFilter(typeFilter);
-        //autocompleteFragment.setBoundsBias(new LatLngBounds(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()),trafalgar));
         bikePoints = new ClusterManager<BikePointMarker>(this, mMap){
             @Override
             public boolean onMarkerClick(Marker marker){
@@ -178,8 +156,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     GregorianCalendar gc = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
                     gc.add(Calendar.SECOND,
                             (new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition()).get()));
+                    ArrayList<String> results = new BikeStatusAsync().execute(marker.getTitle()).get();
+                    marker.setTitle(results.get(0));
+                    marker.setSnippet("ETA " + gc.getTime()+"\n" +
+                            "Available "+ results.get(1)+ " Free Spaces " + results.get(2));
 
-                    marker.setSnippet("ETA " + gc.getTime().getTime());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -303,4 +284,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         Toast toast = Toast.makeText(context, text, duration);
         toast.show();
     }
+
+
 }

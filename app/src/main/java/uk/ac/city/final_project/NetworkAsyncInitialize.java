@@ -2,9 +2,7 @@ package uk.ac.city.final_project;
 
 import android.os.AsyncTask;
 
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 
 import org.json.JSONArray;
@@ -53,7 +51,7 @@ public class NetworkAsyncInitialize extends AsyncTask<ClusterManager<BikePointMa
             for (int i = 0; i<jsonArray.length(); i++){
                 JSONObject result = jsonArray.getJSONObject(i);
                 latLongList.add(new LatLng(result.getDouble("lat"), result.getDouble("lon")));
-                markerName.add(result.getString("commonName"));
+                markerName.add(result.getString("id"));
             }
         }
         catch (Exception e){
