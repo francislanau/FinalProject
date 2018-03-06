@@ -15,7 +15,6 @@ public class BikePointMarker implements ClusterItem  {
     public BikePointMarker(LatLng latLng, String name){
         mPosition = latLng;
         this.title = name;
-        snippet = snippet;
     }
 
     @Override
@@ -33,7 +32,8 @@ public class BikePointMarker implements ClusterItem  {
         return snippet;
     }
 
-    public void setSnippet(String snippet) {
-        this.snippet = snippet;
+    public void setSnippet(String snippet){
+        this.snippet=snippet;
     }
+
 }

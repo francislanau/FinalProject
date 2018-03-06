@@ -10,38 +10,24 @@ import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.net.ssl.HttpsURLConnection;
 
 /**
- * Created by franc on 09/02/2018.
+ * Created by franc on 10/02/2018.
  */
 
-public class DistanceMatrixAsync extends AsyncTask<LatLng,Void,Integer> {
-    private LatLng origin;
-    private LatLng destination;
+public class FreeSpacesCheckMatrix extends AsyncTask<Void,Void,Void> {
     @Override
-    protected Integer doInBackground(LatLng... latLngs) {
-        origin= latLngs[0];
-        destination = latLngs[1];
-        Integer retInt = 0;
-        try {
-            retInt = getValuesFromJSON(getDistance());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return retInt;
+    protected Void doInBackground(Void... voids) {
+        return null;
     }
 
-    private String getDistance()  {
+    private String getBikePointSpaces()  {
         String jsonResult = null;
         try {
-            URL url = new URL("https://maps.googleapis.com/maps/api/distancematrix" +
-                    "/json?origins="+origin.latitude+","+ origin.longitude
-                    +"&destinations="+destination.latitude+","+destination.longitude
-                    +"&mode=walking&key=AIzaSyAD9fRYX1gHSdqDlni-CC_u_RU9f54lMqE");
+            URL url = new URL(" ");
             HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
             InputStream inputStream = urlConnection.getInputStream();
             Scanner scanner = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");

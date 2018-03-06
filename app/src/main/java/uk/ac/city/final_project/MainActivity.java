@@ -109,6 +109,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         locationRequest.setInterval(1000);
         locationRequest.setFastestInterval(1000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        new PreditionAsync().execute();
     }
 
     public void movePoint(){
@@ -158,13 +159,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             (new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition()).get()));
                     ArrayList<String> results = new BikeStatusAsync().execute(marker.getTitle()).get();
                     marker.setTitle(results.get(0));
-                    marker.setSnippet("ETA " + gc.getTime()+"\n" +
+                    marker.setSnippet(//"ETA " + gc.getTime()+"\n" +
                             "Available "+ results.get(1)+ " Free Spaces " + results.get(2));
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
+                }
+                catch (IndexOutOfBoundsException e){
+
+                }
+                catch (NullPointerException e){
+
                 }
                 return false;
 

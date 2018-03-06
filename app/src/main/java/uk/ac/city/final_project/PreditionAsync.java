@@ -5,7 +5,9 @@ import android.os.StrictMode;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Created by user on 02/03/2018.
@@ -25,8 +27,12 @@ public class PreditionAsync extends AsyncTask<Void,Void,Void> {
         String connectionURL = null;
         try{
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            connectionURL = "";
+            connectionURL = "jdbc:jtds:sqlserver://cycledata.c65vxnzgxgck.eu-west-2.rds.amazonaws.com,1433:database=CycleData;user=Francis;password=Felipeformula1";
             connection = DriverManager.getConnection(connectionURL);
+            connection.setReadOnly(true);
+            String q = "";
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(q);
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
