@@ -149,6 +149,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
         AutocompleteFilter typeFilter = new AutocompleteFilter.Builder().setCountry("UK").build();
         autocompleteFragment.setFilter(typeFilter);
+        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(this));
         bikePoints = new ClusterManager<BikePointMarker>(this, mMap){
             @Override
             public boolean onMarkerClick(Marker marker){
@@ -157,13 +158,37 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     gc.add(Calendar.SECOND,
                             (new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition()).get()));
                     ArrayList<String> getPointStatus = new BikeStatusAsync().execute(marker.getTitle()).get();
-                    ArrayList<Object> input = new ArrayList<Object>();
+                    ArrayList<String> input = new ArrayList<>();
                     input.add(marker.getTitle());
-                    input.add(gc.getTime());
-                    ArrayList<Integer> getFutureStatus = new PreditionAsync().execute(input).get();
+                    String minuteString = ((Integer)gc.get(gc.MINUTE)).toString();
+                    if(gc.get(gc.MINUTE)<10){
+                        minuteString = "0" + minuteString;
+                    }
+                    Integer hourInt = (Integer)gc.get(gc.HOUR);
+                    if(gc.get(gc.AM_PM) == gc.PM){
+                        hourInt+=12;
+                    }
+                    String hourString = hourInt.toString();
+                    if(hourInt<10){
+                        hourString = "0" + hourString;
+                    }
+                    Integer monthInt = ((Integer)gc.get(gc.MONTH))+1;
+                    String monthString = monthInt.toString();
+                    if(gc.get(gc.MONTH)<10){
+                        monthString = "0" + monthString;
+                    }
+                    String dayString = ((Integer)gc.get(gc.DAY_OF_MONTH)).toString();
+                    if(gc.get(gc.DAY_OF_MONTH)<10){
+                        dayString = "0" + dayString;
+                    }
+                    String dateInput = gc.get(gc.YEAR) +"-"+ monthString+"-"+ dayString + " "
+                            + hourString + ":"+ minuteString;
+                    input.add(dateInput);
+                    new PreditionAsync().execute(input).get();
                     marker.setTitle(getPointStatus.get(0));
-                    marker.setSnippet(//"ETA " + gc.getTime()+"\n" +
-                            "Available "+ getPointStatus.get(1)+ " Free Spaces " + getPointStatus.get(2));
+                    marker.setSnippet("ETA - " + hourString +":" + minuteString + "\n" +
+                            "Available Bikes - "+ getPointStatus.get(1)+ "\nFree Spaces -" + getPointStatus.get(2)
+                            +"\n Predicted Availability - " +  new PreditionAsync().execute(input).get());
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
