@@ -36,8 +36,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.maps.android.clustering.ClusterManager;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
@@ -155,16 +158,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public boolean onMarkerClick(Marker marker){
                 try {
                     GregorianCalendar gc = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-                    gc.add(Calendar.SECOND,
-                            (new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition()).get()));
+                    Integer secArr = (new DistanceMatrixAsync().execute(new LatLng(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude()), marker.getPosition()).get());
+                    gc.add(Calendar.SECOND, secArr);
                     ArrayList<String> getPointStatus = new BikeStatusAsync().execute(marker.getTitle()).get();
                     ArrayList<String> input = new ArrayList<>();
-                    input.add(marker.getTitle());
                     String minuteString = ((Integer)gc.get(gc.MINUTE)).toString();
                     if(gc.get(gc.MINUTE)<10){
                         minuteString = "0" + minuteString;
                     }
-                    Integer hourInt = (Integer)gc.get(gc.HOUR);
+                    Integer hourInt = ((Integer)gc.get(gc.HOUR))+1;
                     if(gc.get(gc.AM_PM) == gc.PM){
                         hourInt+=12;
                     }
@@ -183,13 +185,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                     String dateInput = gc.get(gc.YEAR) +"-"+ monthString+"-"+ dayString + " "
                             + hourString + ":"+ minuteString;
-                    input.add(dateInput);
-                    new PreditionAsync().execute(input).get();
+                    input.add(secArr.toString());
+                    input.add(marker.getTitle());
                     marker.setTitle(getPointStatus.get(0));
+                    Integer bikestaken = new PreditionAsync().execute(input).get().get(0);
+                    Integer bikesDocked = new PreditionAsync().execute(input).get().get(1);
+                    Integer predictedAvail = (new Integer(getPointStatus.get(1)) - bikestaken) + bikesDocked;
+                    if (predictedAvail<0){
+                        predictedAvail = 0;
+                    }
+                    Integer predictedFree = (new Integer(getPointStatus.get(2)) + bikestaken) - bikesDocked;
+                    if (predictedFree<0){
+                        predictedFree = 0;
+                    }
                     marker.setSnippet("ETA - " + hourString +":" + minuteString + "\n" +
                             "Available Bikes - "+ getPointStatus.get(1)+ "\nFree Spaces -" + getPointStatus.get(2)
-                            +"\n Predicted Availability - " +  new PreditionAsync().execute(input).get());
-
+                            +"\n Predicted Availability - " + predictedAvail + "\n Predicted Free Spaces - " + predictedFree);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
