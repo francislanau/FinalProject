@@ -164,7 +164,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if(gc.get(gc.MINUTE)<10){
                         minuteString = "0" + minuteString;
                     }
-                    Integer hourInt = (Integer)gc.get(gc.HOUR);
+                    Integer hourInt = (Integer)(gc.get(gc.HOUR))+1;
                     if(gc.get(gc.AM_PM) == gc.PM){
                         hourInt+=12;
                     }
