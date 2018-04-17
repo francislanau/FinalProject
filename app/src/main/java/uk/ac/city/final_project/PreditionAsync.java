@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,20 +21,28 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Created by user on 02/03/2018.
  */
 
-public class PreditionAsync extends AsyncTask<ArrayList<String>,Void,Integer> {
+public class PreditionAsync extends AsyncTask<ArrayList<String>,Void,ArrayList<Integer>>{
     ArrayList <String> list;
 
     @Override
-    protected Integer doInBackground(ArrayList... arrayLists) {
+    protected ArrayList<Integer> doInBackground(ArrayList... arrayLists) {
         list = arrayLists[0];
-        Integer returnInt = 0;
+        ArrayList<Integer> returnInt = null;
         try {
             returnInt = connect();
+            if (returnInt == null){
+                returnInt.add(0);
+                returnInt.add(0);
+            }
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -43,36 +53,43 @@ public class PreditionAsync extends AsyncTask<ArrayList<String>,Void,Integer> {
         return returnInt;
     }
 
-    private Integer connect() throws IOException {
-
-        Integer returnInt = 0;
-        String link = "https://cycleapp.000webhostapp.com";
+    private ArrayList<Integer> connect() throws IOException {
+        ArrayList<Integer> returnInt = null;
+        String link = "http://cycleapp.gwiddle.co.uk/index.php";
         URL url = new URL(link);
-        String data = URLEncoder.encode("station", "UTF-8") +
-                "=" + URLEncoder.encode(list.get(0).substring(11, list.get(0).toString().length()), "UTF-8")
-                + " " + URLEncoder.encode("endDate" , "UTF-8") + "=" + URLEncoder.encode(list.get(1).substring(0,10), "UTF-8")
-                + " " + URLEncoder.encode("endHour","UTF-8") + "=" + URLEncoder.encode(list.get(1).substring(11,13),"UTF-8");
-                //+ " " + URLEncoder.encode("endMinute","UTF-8") + "=" + URLEncoder.encode(list.get(1).substring(14,16),"UTF-8");
-        URLConnection connection = url.openConnection();
-
+        Map<String,Object> params = new LinkedHashMap<>();
+        params.put("station", list.get(1).substring(11,list.get(1).length())); // All parameters, also easy
+        params.put("sec", list.get(0));
+        StringBuilder postData = new StringBuilder();
+        // POST as urlencoded is basically key-value pairs, as with GET
+        // This creates key=value&key=value&... pairs
+        for (Map.Entry<String,Object> param : params.entrySet()) {
+            if (postData.length() != 0){
+                postData.append('&');
+            }
+            postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
+            postData.append('=');
+            postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
+        }
+        byte[] postDataBytes = postData.toString().getBytes("UTF-8");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        connection.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
         connection.setDoOutput(true);
-        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-        writer.write(data);
-        writer.flush();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        StringBuilder stringBuilder = new StringBuilder();
-        String line = null;
+        connection.getOutputStream().write(postDataBytes);
 
-        while ((line = bufferedReader.readLine())!=null){
-            stringBuilder.append(line);
-            break;
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(),"UTF-8"));
+        StringBuilder outPutSb = new StringBuilder();
+        for (int i; (i = bufferedReader.read())>=0;){
+            outPutSb.append(Character.toString((char) i));
         }
-        try {
-            returnInt = new Integer(stringBuilder.toString());
-        }catch (Exception e){
-
+        if(outPutSb.length()!=0) {
+            String[] stringSplit = outPutSb.toString().split(",");
+            returnInt = new ArrayList<>();
+            returnInt.add(new Integer(stringSplit[0]));
+            returnInt.add(new Integer(stringSplit[1]));
         }
-
         return returnInt;
     }
 }
