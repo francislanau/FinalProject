@@ -24,14 +24,14 @@ public class BikeStatusAsync extends AsyncTask<String,Void,ArrayList<String>>{
     protected ArrayList<String> doInBackground(String... strings) {
         bikepointid = strings[0];
         try {
-            getValuesFromJSON(getDistance());
-        } catch (JSONException e) {
+            getValuesFromJSON(getPointStatus());
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return bikePointStatus;
     }
 
-    private String getDistance()  {
+    private String getPointStatus()  {
         String jsonResult = null;
         try {
             URL url = new URL("https://api.tfl.gov.uk/BikePoint/"+bikepointid+"?" +
@@ -46,7 +46,7 @@ public class BikeStatusAsync extends AsyncTask<String,Void,ArrayList<String>>{
         return jsonResult;
     }
 
-    private void getValuesFromJSON(String jsonResult) throws JSONException {
+    private void getValuesFromJSON(String jsonResult) {
         Integer integer= null;
         try{
             JSONObject jsonObjectBikeNo = new JSONObject(jsonResult);

@@ -29,18 +29,15 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.maps.android.clustering.ClusterManager;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
@@ -88,7 +85,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 for (Location location :locationResult.getLocations()) {
-                    movePoint();
+
                 }
             }
         };
@@ -113,21 +110,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         locationRequest.setFastestInterval(1000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
-
-    public void movePoint(){
-        locationProvider.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-            @Override
-            public void onSuccess(Location location) {
-                if (location != null) {
-                    LatLng currentLatLng = new LatLng(location.getLatitude(),location.getLongitude());
-                } else {
-
-                }
-            }
-        });
-    }
     public void addDestinationMarker(LatLng latLng){
-        mMap.clear();
         destination = new MarkerOptions().position(latLng);
         GoogleMap.OnMarkerClickListener onClickListener = new GoogleMap.OnMarkerClickListener() {
             @Override
@@ -136,7 +119,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         };
         mMap.addMarker(destination);
-
         mMap.setMinZoomPreference(10);
         mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
     }
@@ -145,7 +127,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setMyLocationEnabled(true);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED){
+            mMap.setMyLocationEnabled(true);
+        }
         LatLng trafalgar= new LatLng(51.508056,-0.128056);
         mMap.moveCamera(newLatLng(trafalgar));
         mMap.setMinZoomPreference(10);
@@ -153,6 +143,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         AutocompleteFilter typeFilter = new AutocompleteFilter.Builder().setCountry("UK").build();
         autocompleteFragment.setFilter(typeFilter);
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(this));
+        UiSettings uiSettings = mMap.getUiSettings();
+        uiSettings.setZoomControlsEnabled(true);
+        uiSettings.setMapToolbarEnabled(false);
         bikePoints = new ClusterManager<BikePointMarker>(this, mMap){
             @Override
             public boolean onMarkerClick(Marker marker){
@@ -187,17 +180,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             + hourString + ":"+ minuteString;
                     input.add(secArr.toString());
                     input.add(marker.getTitle());
-                    marker.setTitle(getPointStatus.get(0));
-                    Integer bikestaken = new PreditionAsync().execute(input).get().get(0);
-                    Integer bikesDocked = new PreditionAsync().execute(input).get().get(1);
+                    ArrayList<Integer> prediction = new PreditionAsync().execute(input).get();
+                    Integer bikestaken = prediction.get(0);
+                    Integer bikesDocked = prediction.get(1);
                     Integer predictedAvail = (new Integer(getPointStatus.get(1)) - bikestaken) + bikesDocked;
+                    Integer predictedFree = (new Integer(getPointStatus.get(2)) + bikestaken) - bikesDocked;
+                    Integer fullDocks  = predictedAvail + predictedFree;
                     if (predictedAvail<0){
                         predictedAvail = 0;
+                        predictedFree = fullDocks;
                     }
-                    Integer predictedFree = (new Integer(getPointStatus.get(2)) + bikestaken) - bikesDocked;
                     if (predictedFree<0){
                         predictedFree = 0;
+                        predictedAvail = fullDocks;
                     }
+                    marker.setTitle(getPointStatus.get(0));
                     marker.setSnippet("ETA - " + hourString +":" + minuteString + "\n" +
                             "Available Bikes - "+ getPointStatus.get(1)+ "\nFree Spaces -" + getPointStatus.get(2)
                             +"\n Predicted Availability - " + predictedAvail + "\n Predicted Free Spaces - " + predictedFree);
@@ -299,22 +296,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         requestLocationUpdates();
-        movePoint();
 
     }
 
     private void requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
         }
-        locationProvider.requestLocationUpdates(locationRequest,locationCallback,null );
+        else {
+            locationProvider.requestLocationUpdates(locationRequest, locationCallback, null);
+            mMap.setMyLocationEnabled(true);
+        }
     }
 
     @Override

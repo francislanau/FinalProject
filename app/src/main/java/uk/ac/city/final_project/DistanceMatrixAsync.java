@@ -1,16 +1,12 @@
 package uk.ac.city.final_project;
 
 import android.os.AsyncTask;
-
 import com.google.android.gms.maps.model.LatLng;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -29,7 +25,7 @@ public class DistanceMatrixAsync extends AsyncTask<LatLng,Void,Integer> {
         Integer retInt = 0;
         try {
             retInt = getValuesFromJSON(getDistance());
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return retInt;
@@ -52,7 +48,7 @@ public class DistanceMatrixAsync extends AsyncTask<LatLng,Void,Integer> {
         return jsonResult;
     }
 
-    private Integer getValuesFromJSON(String jsonResult) throws JSONException {
+    private Integer getValuesFromJSON(String jsonResult) {
         Integer integer= null;
         try{
             JSONObject jsonObject = new JSONObject(jsonResult);

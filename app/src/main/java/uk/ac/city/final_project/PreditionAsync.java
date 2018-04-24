@@ -1,31 +1,17 @@
 package uk.ac.city.final_project;
 
 import android.os.AsyncTask;
-import android.util.Log;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.net.ssl.HttpsURLConnection;
-
 /**
  * Created by user on 02/03/2018.
  */
@@ -78,7 +64,6 @@ public class PreditionAsync extends AsyncTask<ArrayList<String>,Void,ArrayList<I
         connection.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
         connection.setDoOutput(true);
         connection.getOutputStream().write(postDataBytes);
-
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(),"UTF-8"));
         StringBuilder outPutSb = new StringBuilder();
         for (int i; (i = bufferedReader.read())>=0;){
@@ -87,8 +72,8 @@ public class PreditionAsync extends AsyncTask<ArrayList<String>,Void,ArrayList<I
         if(outPutSb.length()!=0) {
             String[] stringSplit = outPutSb.toString().split(",");
             returnInt = new ArrayList<>();
-            returnInt.add(new Integer(stringSplit[0]));
-            returnInt.add(new Integer(stringSplit[1]));
+            returnInt.add(Integer.valueOf(stringSplit[0]));
+            returnInt.add(Integer.valueOf(stringSplit[1]));
         }
         return returnInt;
     }

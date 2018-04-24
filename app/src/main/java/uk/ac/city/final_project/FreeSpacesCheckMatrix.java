@@ -38,7 +38,7 @@ public class FreeSpacesCheckMatrix extends AsyncTask<Void,Void,Void> {
         return jsonResult;
     }
 
-    private Integer getValuesFromJSON(String jsonResult) throws JSONException {
+    private Integer getValuesFromJSON(String jsonResult) {
         Integer integer= null;
         try{
             JSONObject jsonObject = new JSONObject(jsonResult);
